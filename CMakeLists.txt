@@ -9,10 +9,12 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   roscpp
   std_msgs
+  tf
   )
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Ceres REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -26,6 +28,10 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${CERES_INCLUDE_DIR}
 )
 
 add_library(feature_tracking_module src/FeatureTrackingModule.cpp)
+
+add_executable(target_tracker_node src/TargetTrackerNode.cpp)
+target_link_libraries(target_tracker_node feature_tracking_module ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBRARIES})
