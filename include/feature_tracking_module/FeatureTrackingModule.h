@@ -6,7 +6,7 @@
 #define FTMODULE_FEATURETRACKINGMODULE_H
 
 
-//#include "feature_tracking_module/FeatureObservation.h"
+#include "feature_tracking_module/FeatureObservation.h"
 
 
 namespace ftmodule {

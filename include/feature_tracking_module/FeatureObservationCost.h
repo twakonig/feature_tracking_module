@@ -25,7 +25,8 @@ class FeatureObservation;
 
 class FeatureObservationCost {
  public:
-  FeatureObservationCost(FeatureObservation *feature_observation) : feature_observation_(feature_observation) {}
+  FeatureObservationCost(FeatureObservation *feature_observation) :
+        feature_observation_(feature_observation) {}
 
   template <typename T>
   bool operator()(T const* t_w_i_, T const* q_w_i_,
@@ -41,7 +42,8 @@ bool FeatureObservationCost::operator()(T const* t_w_i_, T const* q_w_i_,
                 T const* p_w_, T* residual_) const {
 #ifdef COST_DEBUG
   ros::Time t0 = ros::Time::now();
-	std::cout << "Starting FeatureObservationCost computation for t=" << feature_observation_->t() << " and feature " << feature_observation_->featureId_ << std::endl;
+	std::cout << "Starting FeatureObservationCost computation for t=" <<
+	    feature_observation_->t() << " and feature " << feature_observation_->featureId_ << std::endl;
   std::cout << "Feature pos: " << feature_observation_->mapPoint_.t_w_f().transpose() << std::endl;
 #endif
 
