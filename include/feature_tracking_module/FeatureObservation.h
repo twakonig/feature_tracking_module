@@ -11,7 +11,7 @@
 #include <cv_bridge/cv_bridge.h>
 
 #include "feature_tracking_module/MapPoint.h"
-#include "feature_tracking_module/FeatureObservationCost.h"
+#include "feature_tracking_module/FeatureTrackingCalibration.h"
 
 namespace ftmodule {
 
@@ -25,41 +25,17 @@ class FeatureObservation : public confusion::UpdateMeasurement {
                    confusion::Pose<double> &T_c_i,
                    const PointFeatureCalibration &pointFeatureCalibration,
                    int measurementType, //todo No default value for this for now to make sure I'm not creating any without specifying Tracking/Smoothing
-                   int startingStateParamIndex = 0) :
-      UpdateMeasurement(measurementType, t, "Pf", true), //todo Temp Check if the map point is valid before solving each time
-      mapPoint_(mapPoint), detectedKeyPoint_(detectedKeyPoint),
-      pointFeatureCalibration_(pointFeatureCalibration), T_c_i_(T_c_i),
-      startingStateParamIndex_(startingStateParamIndex) { }
+                   int startingStateParamIndex = 0);
+
+  ~FeatureObservation() override;
 
   bool createCostFunction(std::unique_ptr<ceres::CostFunction> &costFunctionPtr,
                           std::unique_ptr<ceres::LossFunction> &lossFunctionPtr,
                           std::vector<size_t> &stateParameterIndexVector,
-                          std::vector<double *> &staticParameterDataVector) override {
-    std::unique_ptr<ceres::CostFunction> costFunctionPtr_(
-        new ceres::AutoDiffCostFunction<FeatureObservationCost, 2, 3, 4, 3, 4, 3>(
-            new FeatureObservationCost(this)));
-
-    stateParameterIndexVector.push_back(startingStateParamIndex_);
-    stateParameterIndexVector.push_back(startingStateParamIndex_ + 1);
-
-    staticParameterDataVector.push_back(T_c_i_.trans.data());
-    staticParameterDataVector.push_back(T_c_i_.rot.coeffs().data());
-    staticParameterDataVector.push_back(mapPoint_.GetPositionDataPointer());
-
-    costFunctionPtr = std::move(costFunctionPtr_);
-
-    if (!pointFeatureCalibration_.useLossFunction_)
-      lossFunctionPtr.reset();
-    else {
-      std::unique_ptr<ceres::LossFunction>
-          lossFunctionPtr_(new ceres::HuberLoss(pointFeatureCalibration_.lossCoefficient_));
-      lossFunctionPtr = std::move(lossFunctionPtr_);
-    }
-
-    return true;
-  }
+                          std::vector<double *> &staticParameterDataVector) override;
 
   int residualDimension() override { return 2; }
+
   const confusion::Pose<double>& T_c_i() const { return T_c_i_; }
   const cv::KeyPoint &keyPoint() const { return detectedKeyPoint_; }
   const cv::Point2f &featureLocationForVisualization() const { return detectedKeyPoint_.pt; }

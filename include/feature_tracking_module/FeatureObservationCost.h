@@ -5,23 +5,14 @@
 #include <Eigen/Core>
 #include <array>
 
-#include "confusion/UpdateMeasurement.h"
-#include "confusion/utilities/Pose.h"
-#include "confusion/utilities/ceres_utils.h"
-
+#include <confusion/UpdateMeasurement.h>
+#include <confusion/utilities/Pose.h>
+#include <confusion/utilities/ceres_utils.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include "feature_tracking_module/FeatureObservation.h"
+
 namespace ftmodule {
-
-struct PointFeatureCalibration {
-  Eigen::Matrix<double, 3, 4> projMat_;
-  double w_; //Weighting [pixels]. Inverse stddev.
-  bool useLossFunction_ = true;
-  double lossCoefficient_ = 5.0;
-  double keypointMultilpierForVisualization_ = 1.0; //To allow visualization to be done at a different image size
-};
-
-class FeatureObservation;
 
 class FeatureObservationCost {
  public:

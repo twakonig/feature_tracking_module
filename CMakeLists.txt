@@ -31,7 +31,10 @@ include_directories(
   ${CERES_INCLUDE_DIR}
 )
 
-add_library(feature_tracking_module src/FeatureTrackingModule.cpp)
+add_library(feature_tracking_module
+  src/FeatureTrackingModule.cpp
+  src/FeatureObservation.cpp
+  )
 
-add_executable(target_tracker_node src/TargetTrackerNode.cpp)
+add_executable(target_tracker_node src/TargetTrackerNode.cpp src/TargetTracker.cpp)
 target_link_libraries(target_tracker_node feature_tracking_module ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBRARIES})

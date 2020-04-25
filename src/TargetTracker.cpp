@@ -16,8 +16,6 @@
 
 #include "feature_tracking_module/TargetTracker.h"
 
-namespace ftmodule {
-
 
 TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTransport_(node),
                                                 conFusor_(std::make_shared<ImuState>()),
@@ -28,7 +26,7 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
   configFile = confusionPath_ + configFile;
   boost::property_tree::read_info(configFile, pt);
 
-  aprilTagInterface_ = std::unique_ptr<AprilTagModule>(new AprilTagModule(node, &conFusor_, configFile, TAG, &newTagMeasReady_));
+  aprilTagInterface_ = std::unique_ptr<confusion::AprilTagModule>(new confusion::AprilTagModule(node, &conFusor_, configFile, TAG, &newTagMeasReady_));
 
   // Link the states to the reference frame maps for adding new frames on the fly
   auto firstState = std::dynamic_pointer_cast<ImuState>(conFusor_.stateVector_.front());
@@ -424,5 +422,3 @@ void TargetTracker::publish(std::shared_ptr<confusion::State> statePtr, const co
 
   publishDerived(statePtr, stateVector);
 }
-
-} // namespace ftmodule

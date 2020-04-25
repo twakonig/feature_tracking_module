@@ -12,6 +12,8 @@ namespace ftmodule {
 
 class MapPoint {
 public:
+  MapPoint(const int &id, const Eigen::Vector3d &position_w) :
+        id_(id), position_w_(position_w) { }
 
   int Id() const { return id_; }
   double *GetPositionDataPointer() { return position_w_.data(); }

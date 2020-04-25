@@ -53,7 +53,8 @@
 #include "confusion/utilities/ImuPropagator.h"
 #include "confusion/Diagram.h"
 
-namespace ftmodule {
+#include "feature_tracking_module/SensorEnumDefinition.h"
+#include "confusion/ImuState.h"
 
 class TargetTracker {
  public:
@@ -99,9 +100,9 @@ class TargetTracker {
 
   std::thread estimatorThread_;
 
-  ConFusor conFusor_;
+  confusion::ConFusor conFusor_;
 
-  std::unique_ptr<AprilTagModule> aprilTagInterface_;
+  std::unique_ptr<confusion::AprilTagModule> aprilTagInterface_;
   TagTrackerParameters tagTrackerParameters_;
 
   Eigen::Vector2d gravity_rot_;
@@ -134,7 +135,5 @@ class TargetTracker {
   std::string configFile = "/example/tagtracker_config.cfg";
   double loop_freq = 100; // [Hz]
 };
-
-} //namespace ftmodule
 
 #endif /* INCLUDE_CONFUSION_EXAMPLES_TAGTRACKER_H_ */
