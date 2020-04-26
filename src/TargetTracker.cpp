@@ -22,8 +22,8 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
                                                 statesBatch_(NUM_PROCESS_SENSORS, NUM_UPDATE_SENSORS),
                                                 imuPropagator_(5000) {
   // Load config parameters from the text file
-  confusionPath_ = ros::package::getPath("confusion");
-  configFile = confusionPath_ + configFile;
+  package_path_ = ros::package::getPath("feature_tracking_module");
+  configFile = package_path_ + configFile;
   boost::property_tree::read_info(configFile, pt);
 
   aprilTagInterface_ = std::unique_ptr<confusion::AprilTagModule>(
@@ -39,7 +39,7 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
   firstState->setTagReferenceFrameOffsets(aprilTagInterface_->getTagReferenceFrameOffsetsMapPointer());
 
   // Set up the logger
-  std::string logFileName = confusionPath_ + "/data/tagtracker_log.txt";
+  std::string logFileName = package_path_ + "/data/tagtracker_log.txt";
   logger_ = std::unique_ptr<confusion::Logger>(new confusion::Logger(logFileName,
                                                                      *conFusor_.stateVector_.front()));
   logData_ = pt.get<bool>("logData");

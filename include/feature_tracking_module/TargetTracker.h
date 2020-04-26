@@ -121,7 +121,7 @@ class TargetTracker {
   double t_imu_latest_ = 0.0;
 
  private:
-  std::string confusionPath_;
+  std::string package_path_;
   std::unique_ptr<confusion::Logger> logger_;
   boost::property_tree::ptree pt;
 
@@ -135,7 +135,7 @@ class TargetTracker {
 
   confusion::ImuPropagator imuPropagator_;
 
-  std::string configFile = "/example/tagtracker_config.cfg";
+  std::string configFile = "/config/target_tracker.cfg";
   double loop_freq = 100; // [Hz]
 };
 
