@@ -26,7 +26,13 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
   configFile = confusionPath_ + configFile;
   boost::property_tree::read_info(configFile, pt);
 
-  aprilTagInterface_ = std::unique_ptr<confusion::AprilTagModule>(new confusion::AprilTagModule(node, &conFusor_, configFile, TAG, &newTagMeasReady_));
+  aprilTagInterface_ = std::unique_ptr<confusion::AprilTagModule>(
+      new confusion::AprilTagModule(node, &conFusor_, configFile,
+          TAG, &newTagMeasReady_));
+  std::shared_ptr<confusion::Pose<double>> T_c_i_ptr = aprilTagInterface_->getTciForUseExternally();
+
+  feature_tracking_module_ = std::unique_ptr<ftmodule::FeatureTrackingModule>(
+      new ftmodule::FeatureTrackingModule(node_, conFusor_, *T_c_i_ptr, pt));
 
   // Link the states to the reference frame maps for adding new frames on the fly
   auto firstState = std::dynamic_pointer_cast<ImuState>(conFusor_.stateVector_.front());
@@ -221,6 +227,8 @@ void TargetTracker::runEstimator() {
 
     tracking_ = true;
     aprilTagInterface_->copyOutEstimateAfterOptimization();
+
+    feature_tracking_module_->ProcessingAfterOptimization();
 
     // You can optionally draw a diagram of the current MHE problem structure
     if (drawDiagramRequest_) {

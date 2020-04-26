@@ -53,6 +53,7 @@
 #include "confusion/utilities/ImuPropagator.h"
 #include "confusion/Diagram.h"
 
+#include "feature_tracking_module/FeatureTrackingModule.h"
 #include "feature_tracking_module/SensorEnumDefinition.h"
 #include "confusion/ImuState.h"
 
@@ -104,6 +105,8 @@ class TargetTracker {
 
   std::unique_ptr<confusion::AprilTagModule> aprilTagInterface_;
   TagTrackerParameters tagTrackerParameters_;
+
+  std::unique_ptr<ftmodule::FeatureTrackingModule> feature_tracking_module_;
 
   Eigen::Vector2d gravity_rot_;
 

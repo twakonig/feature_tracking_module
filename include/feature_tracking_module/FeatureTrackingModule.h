@@ -16,11 +16,11 @@ namespace ftmodule {
 
 class FeatureTrackingModule {
 public:
-  FeatureTrackingModule(confusion::ConFusor &conFusor, confusion::Pose<double> &T_c_i, boost::property_tree::ptree& pt);
+  FeatureTrackingModule(ros::NodeHandle &nh, confusion::ConFusor &conFusor, confusion::Pose<double> &T_c_i, boost::property_tree::ptree& pt);
 
   void SetCameraCalibration(const Eigen::Matrix<double,3,4> &proj_mat);
 
-  void AddFeatureObservations(/*todo data in */);
+  void AddFeatureObservationsCallback(/*todo data in */);
 
   void ProcessingAfterOptimization();
 
@@ -28,13 +28,14 @@ public:
 private:
   void AddAndRemoveMapPoints();
   void CopyOutMapAfterOptimization();
+  void Visualize();
 
 
   confusion::ConFusor &conFusor_;
   confusion::Pose<double> &T_c_i_;
   PointFeatureCalibration calibration_;
 
-  //TODO(Tim) Need a reference to the Map
+  //TODO Need a reference to the Map
 };
 
 } // namespace ftmodule
