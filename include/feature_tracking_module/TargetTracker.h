@@ -46,6 +46,10 @@
 #include <confusion/Logger.h>
 #include <confusion/utilities/utilities.h>
 
+#include "target_tracking/Map.hpp"
+#include "target_tracking/RosModule.hpp"
+#include "target_tracking/FeatureTriangulation.hpp"
+
 //#include "confusion/models/PoseMeas.h"
 #include "confusion/TagTrackerParameters.h"
 #include "confusion/modules/apriltag/AprilTagModule.h"
@@ -90,6 +94,7 @@ class TargetTracker {
   ros::Subscriber subDrawDiagram_;
   image_transport::Subscriber subImage_;
 
+
   image_transport::ImageTransport imageTransport_;
   image_transport::Publisher imagePub_;
   ros::Publisher pubState_;
@@ -99,11 +104,15 @@ class TargetTracker {
   ros::Publisher pubRtPose_;
   tf::TransformBroadcaster tfBroadcaster_;
 
+
   std::thread estimatorThread_;
 
   confusion::ConFusor conFusor_;
+  target_tracking::RosModule rosObj_;
+
 
   std::unique_ptr<confusion::AprilTagModule> aprilTagInterface_;
+  std::unique_ptr<target_tracking::RosModule> matchAndMapInterface_;
   TagTrackerParameters tagTrackerParameters_;
 
   std::unique_ptr<ftmodule::FeatureTrackingModule> feature_tracking_module_;

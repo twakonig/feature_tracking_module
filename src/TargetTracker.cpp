@@ -17,26 +17,36 @@
 #include "feature_tracking_module/TargetTracker.h"
 
 
-TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTransport_(node),
-                                                conFusor_(std::make_shared<ImuState>()),
-                                                statesBatch_(NUM_PROCESS_SENSORS, NUM_UPDATE_SENSORS),
-                                                imuPropagator_(5000) {
+//______________________________________________________________________________________________________________________
+//constructor, initialization
+TargetTracker::TargetTracker(ros::NodeHandle &node)
+    : node_(node), imageTransport_(node), conFusor_(std::make_shared<ImuState>()), rosObj_(node),
+    statesBatch_(NUM_PROCESS_SENSORS, NUM_UPDATE_SENSORS),imuPropagator_(5000)
+{
+
+
   // Load config parameters from the text file
   package_path_ = ros::package::getPath("feature_tracking_module");
   configFile = package_path_ + configFile;
   boost::property_tree::read_info(configFile, pt);
 
+
   aprilTagInterface_ = std::unique_ptr<confusion::AprilTagModule>(
       new confusion::AprilTagModule(node, &conFusor_, configFile,
           TAG, &newTagMeasReady_));
+
   std::shared_ptr<confusion::Pose<double>> T_c_i_ptr = aprilTagInterface_->getTciForUseExternally();
 
+  //initialization of feature tracking module
   feature_tracking_module_ = std::unique_ptr<ftmodule::FeatureTrackingModule>(
-      new ftmodule::FeatureTrackingModule(node_, conFusor_, *T_c_i_ptr, pt));
+      new ftmodule::FeatureTrackingModule(node_, conFusor_, *T_c_i_ptr, pt,rosObj_));
+
+
 
   // Link the states to the reference frame maps for adding new frames on the fly
   auto firstState = std::dynamic_pointer_cast<ImuState>(conFusor_.stateVector_.front());
   firstState->setTagReferenceFrameOffsets(aprilTagInterface_->getTagReferenceFrameOffsetsMapPointer());
+
 
   // Set up the logger
   std::string logFileName = package_path_ + "/data/tagtracker_log.txt";
@@ -49,7 +59,7 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
   runBatch_ = pt.get<bool>("runBatch");
   forwardPropagateState_ = pt.get<bool>("forwardPropagateState");
 
-  //Set the initial constraint on the state
+  //Set the initial constraint on the state -> initial state uncertainty
   tagTrackerParameters_.twi_init_stddev = pt.get<double>("twi_init_stddev");
   tagTrackerParameters_.qwi_init_stddev = pt.get<double>("qwi_init_stddev");
   tagTrackerParameters_.vwi_init_stddev = pt.get<double>("vwi_init_stddev");
@@ -114,9 +124,11 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
   subImu_ = node_.subscribe(pt.get<std::string>("imu_topic"), 1000, &TargetTracker::imuCallback,
                             this, ros::TransportHints().tcpNoDelay());
 
-//  subImage_ = imageTransport_.subscribe(pt.get<std::string>("camera_topic"), 2,
-//                                        &TargetTracker::imageCallback,
-//                                        this);
+  //SUBSCRIBE TO IMAGE TOPIC TO RECEIVE FRAMES
+  subImage_ = imageTransport_.subscribe(pt.get<std::string>("camera_topic"), 2,
+                                       &TargetTracker::imageCallback,
+                                       this);
+
 
   //Start the estimator on a separate thread
   estimatorThread_ = std::thread(&TargetTracker::runEstimator, this);
@@ -124,6 +136,8 @@ TargetTracker::TargetTracker(ros::NodeHandle &node) : node_(node), imageTranspor
 
   std::cout << "[TargetTracker] Initialization complete." << std::endl;
 }
+
+//______________________________________________________________________________________________________________________
 
 
 void TargetTracker::imuCallback(const sensor_msgs::Imu::ConstPtr &imuMsg) {
@@ -134,6 +148,7 @@ void TargetTracker::imuCallback(const sensor_msgs::Imu::ConstPtr &imuMsg) {
 //    t_epoch_ = imuMsg->header.stamp.toSec();
 //    firstMeasurement_ = false;
 //  }
+
 
   double t_imu_source = imuMsg->header.stamp.toSec();
   t_imu_latest_ = t_imu_source;
@@ -153,7 +168,7 @@ void TargetTracker::imuCallback(const sensor_msgs::Imu::ConstPtr &imuMsg) {
     confusion::ImuMeas meas(t_imu_source, a, w, &tagTrackerParameters_.imuCalibration_, &gravity_rot_);
     imuPropagator_.addImuMeasurement(meas);
 
-    if (tracking_) {
+   if (tracking_) {
       confusion::ImuStateParameters state = imuPropagator_.propagate(t_imu_source);
 
       //Publish tf messages
@@ -163,6 +178,10 @@ void TargetTracker::imuCallback(const sensor_msgs::Imu::ConstPtr &imuMsg) {
       if (aprilTagInterface_->getSensorFrameOffset("cam", T_c_i)) {
         tfBroadcaster_.sendTransform(tf::StampedTransform(getTfMsg(T_c_i.inverse()), imuMsg->header.stamp, "imu", "cam"));
       }
+
+      //confusion::Pose<double> T_c_w = T_c_i * state.T_w_i_.inverse();
+      //matchAndMapInterface_->sendTcw(T_c_w.rot, T_c_w.trans);
+
     }
   }
 
@@ -172,9 +191,18 @@ void TargetTracker::imuCallback(const sensor_msgs::Imu::ConstPtr &imuMsg) {
 }
 
 
+//______________________________________________________________________________________________________________________
+
+
+
 void TargetTracker::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
   if (tracking_) {
     confusion::ImuStateParameters state = imuPropagator_.propagate(msg->header.stamp.toSec());
+
+      std::shared_ptr<confusion::Pose<double>> T_c_i_ptr = aprilTagInterface_->getTciForUseExternally();
+      confusion::Pose<double> T_c_w = (*T_c_i_ptr) * state.T_w_i_.inverse();
+      rosObj_.generalCallback(msg, T_c_w.rot, T_c_w.trans, state.T_w_i_.trans.x());
+
 
     cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::RGB8);
     aprilTagInterface_->projectTagsIntoImage(state.T_w_i_, "cam", cv_ptr->image);
@@ -182,6 +210,10 @@ void TargetTracker::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     imagePub_.publish(cv_ptr->toImageMsg());
   }
 }
+
+
+//______________________________________________________________________________________________________________________
+
 
 
 void TargetTracker::runEstimator() {
@@ -226,8 +258,11 @@ void TargetTracker::runEstimator() {
     conFusor_.briefPrint();
 
     tracking_ = true;
+
+    //locked with lock_guard mutex while copying out.
     aprilTagInterface_->copyOutEstimateAfterOptimization();
 
+    //triggers: AddAndRemoveMapPoints(); CopyOutMapAfterOptimization(); Visualize();
     feature_tracking_module_->ProcessingAfterOptimization();
 
     // You can optionally draw a diagram of the current MHE problem structure
@@ -262,6 +297,10 @@ void TargetTracker::runEstimator() {
 }
 
 
+//______________________________________________________________________________________________________________________
+
+
+
 void TargetTracker::stopTracking() {
   std::cout << "Stopping tracking" << std::endl;
 
@@ -276,6 +315,10 @@ void TargetTracker::stopTracking() {
 
   runEstimatorLoopDone_ = false;
 }
+
+
+//______________________________________________________________________________________________________________________
+
 
 
 void TargetTracker::startTracking() {
@@ -293,9 +336,16 @@ void TargetTracker::startTracking() {
 }
 
 
+//______________________________________________________________________________________________________________________
+
+
+
 void TargetTracker::stopTracking(const std_msgs::Empty &msg) {
   stopTracking();
 }
+
+
+//______________________________________________________________________________________________________________________
 
 
 void TargetTracker::startTracking(const std_msgs::Empty &msg) {
@@ -303,10 +353,16 @@ void TargetTracker::startTracking(const std_msgs::Empty &msg) {
 }
 
 
+//______________________________________________________________________________________________________________________
+
+
 void TargetTracker::drawDiagramCallback(const std_msgs::Empty &msg) {
   std::cout << "User requested for a MHE diagram to be drawn." << std::endl;
   drawDiagramRequest_ = true;
 }
+
+
+//______________________________________________________________________________________________________________________
 
 
 void TargetTracker::triggerBatchCalCallback(const std_msgs::Empty &msg) {
@@ -368,6 +424,10 @@ void TargetTracker::triggerBatchCalCallback(const std_msgs::Empty &msg) {
   //Now restart the estimator
   startTracking();
 }
+
+
+//______________________________________________________________________________________________________________________
+
 
 
 void TargetTracker::publish(std::shared_ptr<confusion::State> statePtr, const confusion::StateVector *stateVector) {

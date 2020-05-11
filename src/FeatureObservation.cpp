@@ -8,18 +8,20 @@
 namespace ftmodule {
 
 FeatureObservation::FeatureObservation(double t,
-                   MapPoint &mapPoint,
-                   const cv::KeyPoint &detectedKeyPoint,
-                   confusion::Pose<double> &T_c_i,
-                   const PointFeatureCalibration &pointFeatureCalibration,
-                   int measurementType,
-                   int startingStateParamIndex) :
-    UpdateMeasurement(measurementType, t, "featureobs", false),
-    mapPoint_(mapPoint), detectedKeyPoint_(detectedKeyPoint),
-    pointFeatureCalibration_(pointFeatureCalibration), T_c_i_(T_c_i),
-    startingStateParamIndex_(startingStateParamIndex) { }
+                    target_tracking::MapPoint &mapPoint,
+                    const cv::Point2f &detectedKeyPoint,
+                    confusion::Pose<double> &T_c_i,
+                    const PointFeatureCalibration &pointFeatureCalibration,
+                    int measurementType,
+                    int startingStateParamIndex)
+                   : UpdateMeasurement(measurementType, t, "featureobs", false),
+                   mapPoint_(mapPoint), detectedKeyPoint_(detectedKeyPoint),
+                   pointFeatureCalibration_(pointFeatureCalibration), T_c_i_(T_c_i),
+                   startingStateParamIndex_(startingStateParamIndex) { }
+
 
 FeatureObservation::~FeatureObservation() { }
+
 
 bool FeatureObservation::createCostFunction(std::unique_ptr<ceres::CostFunction> &costFunctionPtr,
                         std::unique_ptr<ceres::LossFunction> &lossFunctionPtr,
@@ -35,6 +37,7 @@ bool FeatureObservation::createCostFunction(std::unique_ptr<ceres::CostFunction>
   staticParameterDataVector.push_back(T_c_i_.trans.data());
   staticParameterDataVector.push_back(T_c_i_.rot.coeffs().data());
   staticParameterDataVector.push_back(mapPoint_.GetPositionDataPointer());
+
 
   costFunctionPtr = std::move(costFunctionPtr_);
 

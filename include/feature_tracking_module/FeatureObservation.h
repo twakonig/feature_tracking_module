@@ -10,18 +10,20 @@
 #include <confusion/utilities/ceres_utils.h>
 #include <cv_bridge/cv_bridge.h>
 
-#include "feature_tracking_module/MapPoint.h"
+
 #include "feature_tracking_module/FeatureTrackingCalibration.h"
+#include "target_tracking/Map.hpp"
 
 namespace ftmodule {
 
+//INHERITANCE: FeatureObservation inheriting from UpateMeasurement class
 class FeatureObservation : public confusion::UpdateMeasurement {
   friend class FeatureObservationCost;
 
  public:
   FeatureObservation(double t,
-                   MapPoint &mapPoint,
-                   const cv::KeyPoint &detectedKeyPoint,
+                   target_tracking::MapPoint &mapPoint,
+                   const cv::Point2f &detectedKeyPoint,
                    confusion::Pose<double> &T_c_i,
                    const PointFeatureCalibration &pointFeatureCalibration,
                    int measurementType, //todo No default value for this for now to make sure I'm not creating any without specifying Tracking/Smoothing
@@ -37,14 +39,14 @@ class FeatureObservation : public confusion::UpdateMeasurement {
   int residualDimension() override { return 2; }
 
   const confusion::Pose<double>& T_c_i() const { return T_c_i_; }
-  const cv::KeyPoint &keyPoint() const { return detectedKeyPoint_; }
-  const cv::Point2f &featureLocationForVisualization() const { return detectedKeyPoint_.pt; }
+  const cv::Point2f &keyPoint() const { return detectedKeyPoint_; }
+  const cv::Point2f &featureLocationForVisualization() const { return detectedKeyPoint_; }
   const double &getPreviousResidualNorm() { return error_; }
 
-  MapPoint &mapPoint_;
+  target_tracking::MapPoint &mapPoint_;
 
 protected:
-  const cv::KeyPoint &detectedKeyPoint_;
+  const cv::Point2f &detectedKeyPoint_;
   const PointFeatureCalibration &pointFeatureCalibration_;
 
   confusion::Pose<double> &T_c_i_;

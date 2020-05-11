@@ -3,14 +3,19 @@ project(feature_tracking_module)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wfatal-errors")
 
+set(PACKAGE_DEPENDENCIES
+        confusion
+        cv_bridge
+        image_transport
+        roscpp
+        std_msgs
+        tf
+        target_tracking
+        )
+
 find_package(catkin REQUIRED COMPONENTS
-  confusion
-  cv_bridge
-  image_transport
-  roscpp
-  std_msgs
-  tf
-  )
+        ${PACKAGE_DEPENDENCIES}
+        )
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -19,7 +24,7 @@ find_package(Ceres REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES FeatureMatcher
-  CATKIN_DEPENDS confusion cv_bridge image_transport roscpp std_msgs
+  CATKIN_DEPENDS confusion cv_bridge image_transport roscpp std_msgs target_tracking
   DEPENDS
 )
 

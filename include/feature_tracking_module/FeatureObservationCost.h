@@ -62,9 +62,10 @@ bool FeatureObservationCost::operator()(T const* t_w_i_, T const* q_w_i_,
   T zy_est = T(feature_observation_->pointFeatureCalibration_.projMat_(1, 1)) * (p_c_est(1) / p_c_est(2))
       + T(feature_observation_->pointFeatureCalibration_.projMat_(1, 2));
 
-  //Compute error
-  residual_[0] = T(feature_observation_->pointFeatureCalibration_.w_) * (T(feature_observation_->detectedKeyPoint_.pt.x) - zx_est);
-  residual_[1] = T(feature_observation_->pointFeatureCalibration_.w_) * (T(feature_observation_->detectedKeyPoint_.pt.y) - zy_est);
+//Compute error
+    residual_[0] = T(feature_observation_->pointFeatureCalibration_.w_) * (T(feature_observation_->detectedKeyPoint_.x) - zx_est);
+    residual_[1] = T(feature_observation_->pointFeatureCalibration_.w_) * (T(feature_observation_->detectedKeyPoint_.y) - zy_est);
+
 
   //todo Temp for logging and analysis
   Eigen::VectorXd res(2);
@@ -77,7 +78,7 @@ bool FeatureObservationCost::operator()(T const* t_w_i_, T const* q_w_i_,
 //  std::cout << feature_observation_->name() << " cost: " << res.transpose() << std::endl;
 
   std::cout << "Feature " << feature_observation_->mapPoint_.mnId << ", check: " << feature_observation_->featureId_ << ". z_meas: " <<
-            feature_observation_->detectedKeyPoint_.pt.x << "," << feature_observation_->detectedKeyPoint_.pt.y <<
+            feature_observation_->detectedKeyPoint_.x << "," << feature_observation_->detectedKeyPoint_.y <<
             "; z_est: " << confusion::getDouble(zx_est) << "," << confusion::getDouble(zy_est) <<
             "; e: " << res.transpose() * res << std::endl;
 #endif
